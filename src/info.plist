@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>bundleid</key>
+	<string>pstadler/alfred-top</string>
+	<key>connections</key>
+	<dict>
+		<key>97013131-9B8A-43F7-8A2C-BF8E6CB0AEAD</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>12467CBD-183E-421C-B11B-3AF8F2B69053</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+			</dict>
+		</array>
+		<key>A0C4FFC0-7F85-455A-B86B-4613F5075FC9</key>
+		<array/>
+		<key>EE0BB4D4-6626-4804-B4FB-EF4C0089EA74</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>D5465A98-34A4-4F4F-8562-A56D3673BCE0</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+			</dict>
+			<dict>
+				<key>destinationuid</key>
+				<string>A0C4FFC0-7F85-455A-B86B-4613F5075FC9</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+			</dict>
+		</array>
+	</dict>
+	<key>createdby</key>
+	<string>Patrick Stadler</string>
+	<key>description</key>
+	<string>Process management with top and kill.</string>
+	<key>disabled</key>
+	<false/>
+	<key>name</key>
+	<string>Top</string>
+	<key>objects</key>
+	<array>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>escaping</key>
+				<integer>63</integer>
+				<key>script</key>
+				<string>#!/bin/bash
+
+kill -9 {query}</string>
+				<key>type</key>
+				<integer>0</integer>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.action.script</string>
+			<key>uid</key>
+			<string>A0C4FFC0-7F85-455A-B86B-4613F5075FC9</string>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>lastpathcomponent</key>
+				<false/>
+				<key>onlyshowifquerypopulated</key>
+				<true/>
+				<key>output</key>
+				<integer>0</integer>
+				<key>removeextension</key>
+				<false/>
+				<key>sticky</key>
+				<false/>
+				<key>text</key>
+				<string>Killed process with PID {query}</string>
+				<key>title</key>
+				<string>kill -9 {query}</string>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.output.notification</string>
+			<key>uid</key>
+			<string>D5465A98-34A4-4F4F-8562-A56D3673BCE0</string>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>argumenttype</key>
+				<integer>0</integer>
+				<key>escaping</key>
+				<integer>63</integer>
+				<key>keyword</key>
+				<string>kill</string>
+				<key>runningsubtext</key>
+				<string>Find matching processes...</string>
+				<key>script</key>
+				<string>#!/bin/bash
+shopt -s nocasematch
+
+source utils.sh
+
+query="{query}"
+
+IFS=''; out=''
+while read -r line; do
+    cpu=$(echo $line | awk -F' {1,}' '{print $2}')
+    mem=$(echo $line | awk -F' {1,}' '{print $3}')
+    pid=$(echo $line | awk -F' {1,}' '{print $4}')
+    state=`human_readable_state $(echo $line | awk -F' {1,}' '{print $5}')`
+    name=$(echo $line | awk -F' {1,}' '{for (i=6; i&lt;=NF; i++) printf "%s ",$i }' | sed 's/ $//g')
+    out+="&lt;item arg=\"$pid\" uid=\"top-$(date +%s)\" valid=\"yes\"&gt;\
+            &lt;title&gt;$name&lt;/title&gt;\
+            &lt;subtitle&gt;PID $pid — $cpu% CPU — $mem% MEM — $state&lt;/subtitle&gt;\
+            &lt;icon&gt;icon-kill.png&lt;/icon&gt;\
+        &lt;/item&gt;"
+done &lt; &lt;(ps -acwwwxo "%cpu %mem pid state command" | tail -n+2 | grep -v grep | grep -i "$query" | head -9)
+
+echo "&lt;?xml version=\"1.0\" encoding=\"UTF-8\"?&gt;&lt;items&gt;$out&lt;/items&gt;"
+exit 0</string>
+				<key>subtext</key>
+				<string>Find and kill a process by PID or Name</string>
+				<key>title</key>
+				<string>Kill Process</string>
+				<key>type</key>
+				<integer>0</integer>
+				<key>withspace</key>
+				<true/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.input.scriptfilter</string>
+			<key>uid</key>
+			<string>EE0BB4D4-6626-4804-B4FB-EF4C0089EA74</string>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>argumenttype</key>
+				<integer>1</integer>
+				<key>escaping</key>
+				<integer>63</integer>
+				<key>keyword</key>
+				<string>top</string>
+				<key>runningsubtext</key>
+				<string>Analyzing processes...</string>
+				<key>script</key>
+				<string>#!/bin/bash
+
+source utils.sh
+
+query="{query}"
+
+IFS=''; out=""
+while read -r line; do
+    cpu=$(echo $line | awk -F' {1,}' '{print $2}')
+    mem=$(echo $line | awk -F' {1,}' '{print $3}')
+    pid=$(echo $line | awk -F' {1,}' '{print $4}')
+    state=`human_readable_state $(echo $line | awk -F' {1,}' '{print $5}')`
+    proc=$(echo $line | awk -F' {1,}' '{for (i=6; i&lt;=NF; i++) printf "%s ",$i }' | sed 's/ -psn.*$//g;s/ $//g')
+    name=$proc
+    if [[ "$proc" == /* ]]; then
+        # strip path from proc
+        name=$(echo $name | sed 's/.*\/\(.*\)$/\1/g')
+    fi
+    icon_path=$(echo "$proc" | sed 's/\(.*\.app\)\/.*/\1/g')
+    icon_type="fileicon"
+    if [[ "$icon_path" != *\.app ]]; then
+        icon_path=/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/ExecutableBinaryIcon.icns
+        icon_type=""
+    fi
+    out+="&lt;item arg=\"$pid\" uid=\"top-$(date +%s)\" valid=\"yes\"&gt;\
+            &lt;title&gt;$name&lt;/title&gt;\
+            &lt;subtitle&gt;$cpu% CPU — $mem% MEM — $state&lt;/subtitle&gt;\
+            &lt;icon type=\"$icon_type\"&gt;$icon_path&lt;/icon&gt;\
+        &lt;/item&gt;"
+done &lt; &lt;(ps -arwwwxo "%cpu %mem pid state command" | tail -n+2 | grep -v grep | grep -i "$query" | head -9 |sed 's/,/\./g')
+
+echo "&lt;?xml version=\"1.0\" encoding=\"UTF-8\"?&gt;&lt;items&gt;$out&lt;/items&gt;"</string>
+				<key>subtext</key>
+				<string>Display the most active processes</string>
+				<key>title</key>
+				<string>Top</string>
+				<key>type</key>
+				<integer>0</integer>
+				<key>withspace</key>
+				<true/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.input.scriptfilter</string>
+			<key>uid</key>
+			<string>97013131-9B8A-43F7-8A2C-BF8E6CB0AEAD</string>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>applescript</key>
+				<string>on alfred_script(q)
+    tell application "Alfred 2" to search "kill " &amp; q
+end alfred_script</string>
+				<key>cachescript</key>
+				<false/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.action.applescript</string>
+			<key>uid</key>
+			<string>12467CBD-183E-421C-B11B-3AF8F2B69053</string>
+		</dict>
+	</array>
+	<key>readme</key>
+	<string></string>
+	<key>uidata</key>
+	<dict>
+		<key>12467CBD-183E-421C-B11B-3AF8F2B69053</key>
+		<dict>
+			<key>ypos</key>
+			<real>10</real>
+		</dict>
+		<key>97013131-9B8A-43F7-8A2C-BF8E6CB0AEAD</key>
+		<dict>
+			<key>ypos</key>
+			<real>10</real>
+		</dict>
+		<key>A0C4FFC0-7F85-455A-B86B-4613F5075FC9</key>
+		<dict>
+			<key>ypos</key>
+			<real>220</real>
+		</dict>
+		<key>D5465A98-34A4-4F4F-8562-A56D3673BCE0</key>
+		<dict>
+			<key>ypos</key>
+			<real>130</real>
+		</dict>
+		<key>EE0BB4D4-6626-4804-B4FB-EF4C0089EA74</key>
+		<dict>
+			<key>ypos</key>
+			<real>130</real>
+		</dict>
+	</dict>
+	<key>webaddress</key>
+	<string>http://github.com/pstadler/alfred-top</string>
+</dict>
+</plist>
